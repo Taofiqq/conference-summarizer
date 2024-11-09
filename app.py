@@ -95,6 +95,9 @@ print(f"TWILIO_AUTH_TOKEN: {os.getenv('TWILIO_AUTH_TOKEN')}")
 openai.api_key = os.getenv('OPENAI_API_KEY')
 sendgrid_client = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 @app.route('/join', methods=['POST'])
 def join_conference():
     try:
@@ -103,6 +106,11 @@ def join_conference():
         print(f"Called To: {request.values.get('To')}")
         print(f"Call SID: {request.values.get('CallSid')}")
         print(f"Time: {datetime.now()}")
+        
+        logger.info("========= WEBHOOK RECEIVED - JOIN =========")
+        logger.info(f"Caller: {request.values.get('From')}")
+        logger.info(f"Request data: {request.values}")
+        logger.info("====================================")
         
         response = VoiceResponse()
         gather = response.gather(numDigits=1, action='/process-gather')
