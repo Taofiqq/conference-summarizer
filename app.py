@@ -123,7 +123,7 @@ def process_gather():
             'meeting_room',
             startConferenceOnEnter=True,
             record='record-from-start',
-            recordingStatusCallback='https://eom14nn4aws5jul.m.pipedream.net/join/recording-status'
+          recordingStatusCallback='/recording-status'
         )
         response.append(dial)
         return str(response)
@@ -142,6 +142,6 @@ def recording_status():
     print(f"Recording SID: {recording_sid}")
     
     return 'OK'
-
+    
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', port=os.getenv('PORT', 5000))
