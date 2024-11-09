@@ -75,6 +75,7 @@ from sendgrid import SendGridAPIClient
 from dotenv import load_dotenv
 import os
 from datetime import datetime
+import logging
 
 # Load environment variables
 load_dotenv()
@@ -98,8 +99,10 @@ sendgrid_client = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
 def join_conference():
     try:
         print("========= WEBHOOK RECEIVED - JOIN =========")
-        print("Request data:", request.values)
-        print("====================================")
+        print(f"Caller Number: {request.values.get('From')}")
+        print(f"Called To: {request.values.get('To')}")
+        print(f"Call SID: {request.values.get('CallSid')}")
+        print(f"Time: {datetime.now()}")
         
         response = VoiceResponse()
         gather = response.gather(numDigits=1, action='/process-gather')
@@ -114,8 +117,9 @@ def join_conference():
 def process_gather():
     try:
         print("========= WEBHOOK RECEIVED - GATHER =========")
-        print("Request data:", request.values)
-        print("====================================")
+        print(f"Caller Number: {request.values.get('From')}")
+        print(f"Pressed Digit: {request.values.get('Digits')}")
+        print(f"Time Joined: {datetime.now()}")
         
         response = VoiceResponse()
         dial = Dial()
