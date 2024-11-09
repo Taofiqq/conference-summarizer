@@ -67,7 +67,7 @@
     
 #     return 'OK'
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from twilio.twiml.voice_response import VoiceResponse, Dial, Gather
 from twilio.rest import Client
 import openai
@@ -89,23 +89,17 @@ twilio_client = Client(
     os.getenv('TWILIO_AUTH_TOKEN')
 )
 
-print(f"TWILIO_ACCOUNT_SID: {os.getenv('TWILIO_ACCOUNT_SID')}")
-print(f"TWILIO_AUTH_TOKEN: {os.getenv('TWILIO_AUTH_TOKEN')}")
-
 openai.api_key = os.getenv('OPENAI_API_KEY')
 sendgrid_client = SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+conference_recordings = {}
+
 @app.route('/join', methods=['POST'])
 def join_conference():
     try:
-        print("========= WEBHOOK RECEIVED - JOIN =========")
-        print(f"Caller Number: {request.values.get('From')}")
-        print(f"Called To: {request.values.get('To')}")
-        print(f"Call SID: {request.values.get('CallSid')}")
-        print(f"Time: {datetime.now()}")
         
         logger.info("========= WEBHOOK RECEIVED - JOIN =========")
         logger.info(f"Caller: {request.values.get('From')}")
@@ -124,18 +118,22 @@ def join_conference():
 @app.route('/process-gather', methods=['POST'])
 def process_gather():
     try:
-        print("========= WEBHOOK RECEIVED - GATHER =========")
-        print(f"Caller Number: {request.values.get('From')}")
-        print(f"Pressed Digit: {request.values.get('Digits')}")
-        print(f"Time Joined: {datetime.now()}")
+        logger.info("========= CALLER JOINED CONFERENCE =========")
+        logger.info(f"Caller: {request.values.get('From')}")
+        logger.info("==========================================")
+        
         
         response = VoiceResponse()
         dial = Dial()
+        
+        base_url = 'https://conference-summarizer.onrender.com'
+        
         dial.conference(
             'meeting_room',
             startConferenceOnEnter=True,
             record='record-from-start',
-          recordingStatusCallback='/recording-status'
+          recordingStatusCallback=f'{base_url}/recording-status',
+          recordingStatusCallbackEvent=['in-progress', 'completed']
         )
         response.append(dial)
         return str(response)
@@ -145,15 +143,40 @@ def process_gather():
 
 @app.route('/recording-status', methods=['POST'])
 def recording_status():
-    """Handle recording status callbacks"""
-    print("========= RECORDING STATUS UPDATE =========")
-    recording_url = request.values.get('RecordingUrl')
-    recording_sid = request.values.get('RecordingSid')
+    try:
+        logger.info("========= RECORDING STATUS UPDATE =========")
+        recording_data = {
+            'url': request.values.get('RecordingUrl'),
+            'sid': request.values.get('RecordingSid'),
+            'status': request.values.get('RecordingStatus'),
+            'duration': request.values.get('RecordingDuration'),
+            'channels': request.values.get('RecordingChannels'),
+            'source': request.values.get('RecordingSource'),
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Store recording data
+        conference_recordings[recording_data['sid']] = recording_data
+        
+        logger.info(f"Recording Status: {recording_data['status']}")
+        logger.info(f"Recording URL: {recording_data['url']}")
+        logger.info(f"Recording SID: {recording_data['sid']}")
+        logger.info(f"Duration: {recording_data['duration']} seconds")
+        
+        # If recording is completed, we can process it
+        if recording_data['status'] == 'completed':
+            logger.info("Recording completed - ready for processing")
+            # Here we'll add transcription logic later
+        
+        return 'OK'
+    except Exception as e:
+        logger.error(f"Error handling recording status: {str(e)}")
+        return str(e), 500
     
-    print(f"Recording URL: {recording_url}")
-    print(f"Recording SID: {recording_sid}")
-    
-    return 'OK'
+@app.route('/recordings', methods=['GET'])
+def list_recordings():
+    """Debug endpoint to list all recordings"""
+    return jsonify(conference_recordings)
     
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=os.getenv('PORT', 5000))
