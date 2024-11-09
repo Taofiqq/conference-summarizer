@@ -133,7 +133,7 @@ def process_gather():
             startConferenceOnEnter=True,
             record='record-from-start',
           recordingStatusCallback=f'{base_url}/recording-status',
-          recordingStatusCallbackEvent=['in-progress', 'completed']
+         recordingStatusCallbackEvent='completed in-progress'
         )
         response.append(dial)
         return str(response)
