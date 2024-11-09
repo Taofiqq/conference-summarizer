@@ -131,7 +131,9 @@ def process_gather():
         dial.conference(
             'meeting_room',
             startConferenceOnEnter=True,
-            record='record-from-start',
+          record=True,
+          statusCallback='https://conference-summarizer.onrender.com/recording-status',
+          statusCallbackEvent='join leave end',
           recordingStatusCallback='https://conference-summarizer.onrender.com/recording-status',
           recordingStatusCallbackEvent='in-progress completed',
           waitUrl='http://twimlets.com/holdmusic?Bucket=com.twilio.music.classical'
