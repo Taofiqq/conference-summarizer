@@ -158,6 +158,9 @@ def recording_status():
             'timestamp': datetime.now().isoformat()
         }
         
+        logger.info("======== Recording Data: ========")
+        logger.info(recording_data)
+        logger.info(f"Recording data", recording_data)
         # Store recording data
         conference_recordings[recording_data['sid']] = recording_data
         
